@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Words Injector.</title>
+<title>Danjü.</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Words Injector">
+<meta name="apple-mobile-web-app-title" content="Danjü">
 <meta name="theme-color" content="#0b0b0d">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Words Injector v0.2 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danjü v0.3 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -66,7 +66,11 @@ svg{display:block}
 #vocab{background:var(--bg);color:var(--v-ink);display:flex;flex-direction:column;padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
 #vocab .in{flex:1;min-height:0;display:flex;flex-direction:column;width:100%;max-width:520px;margin:0 auto}
 #titlebar{flex:none;height:52px;display:flex;align-items:center;padding:0 20px}
-#logo{font-size:23px;font-weight:800;font-style:italic;letter-spacing:-.01em;white-space:nowrap}
+#logo{position:relative;flex:none;width:calc((100% + 40px) * 2 / 3);height:52px;margin-left:-20px;padding-left:20px;font-size:23px;font-weight:800;font-style:italic;letter-spacing:-.01em;white-space:nowrap;-webkit-user-select:none;user-select:none;touch-action:none}
+#logo .lA,#logo .lB{position:absolute;left:20px;top:11px;line-height:30px;transition:opacity .12s ease,letter-spacing .22s ease,transform .22s ease;transform-origin:left center}
+#logo .lB{opacity:0;letter-spacing:-.12em;transform:scaleX(.7)}
+#logo.on .lA{opacity:0;letter-spacing:.15em}
+#logo.on .lB{opacity:1;letter-spacing:-.01em;transform:none}
 #logo .n{color:var(--navy)}
 #pVocab{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 20px}
 .vhead{flex:none;display:flex;align-items:center;gap:10px;padding:2px 0 10px}
@@ -117,7 +121,7 @@ svg{display:block}
 
   <!-- ② 단어장 화면 -->
   <section class="screen" id="vocab"><div class="in">
-    <div id="titlebar"><div id="logo"><span class="n">Words</span> Injector.</div></div>
+    <div id="titlebar"><div id="logo"><span class="lA"><span class="n">Dan</span>jü.</span><span class="lB"><span class="n">단어</span>주사기.</span></div></div>
     <div id="pVocab">
       <div class="vhead">
         <button class="vio" id="vImport" aria-label="단어장 가져오기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
@@ -162,6 +166,17 @@ const SFX={
   tick(){noise(.006,.5*1.29,5000);tone(3200,"sine",.18*1.29,.012);},                 // 틱 — 드럼·속도계 걸림
   tok(){tone(2093,"triangle",.7*.38,.16);tone(4186,"sine",.15*.38,.08);},             // 톡 — 버튼·꾹 누르기
 };
+/* 로고 뿅 — 고쉐와 같은 녹음 파일(sfx/logo.wav), '톡'과 같은 크기 */
+let LOGO_BUF=null,LOGO_BUSY=false;
+function loadLogo(a){if(LOGO_BUF||LOGO_BUSY||!a)return;LOGO_BUSY=true;
+  fetch("sfx/logo.wav").then(r=>r.arrayBuffer()).then(b=>new Promise((ok,ng)=>a.decodeAudioData(b,ok,ng))).then(d=>{LOGO_BUF=d}).catch(()=>{}).finally(()=>{LOGO_BUSY=false});}
+SFX.logo=function(){const a=ac();if(!a)return;if(!LOGO_BUF){loadLogo(a);return;}
+  const s=a.createBufferSource(),g=a.createGain();g.gain.value=.897;s.buffer=LOGO_BUF;s.connect(g).connect(a.destination);s.start(a.currentTime+.005);};
+/* 로고 기믹 — 손을 올려두면 "Danjü." → "단어주사기.", 떼면 원래대로 (고쉐와 동일) */
+(()=>{const L=document.getElementById("logo");if(!L)return;
+  const on=e=>{e.stopPropagation();const a=ac();loadLogo(a);if(!L.classList.contains("on"))SFX.logo();L.classList.add("on");},
+        off=()=>L.classList.remove("on");
+  L.addEventListener("pointerdown",on);["pointerup","pointercancel","pointerleave"].forEach(t=>L.addEventListener(t,off));})();
 
 /* ══════════ 점멸 ══════════ */
 const LEVELS=[];for(let v=1;v<=3.0001;v+=.25)LEVELS.push(+v.toFixed(2));   // 1 ~ 3회/초, 0.25 간격

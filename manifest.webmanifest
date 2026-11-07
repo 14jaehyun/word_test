@@ -1,6 +1,6 @@
 {
-  "name": "Words Injector",
-  "short_name": "Words Injector",
+  "name": "Danjü. 단어주사기",
+  "short_name": "Danjü",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
