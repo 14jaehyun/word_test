@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.9.6">
+<link rel="manifest" href="manifest.webmanifest?v=0.9.7">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.9.6 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.9.7 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -122,6 +122,10 @@ svg{display:block}
 .search.add .plus{display:block}.search.add>svg{display:none}
 .search input{-webkit-touch-callout:none}
 .vempty{font-size:13px;color:var(--faint);text-align:center;padding:40px 0;line-height:1.7}
+/* 핀: 라인 전체 아주 옅은 음영 + 기울어진 핀(한국어 글자색) — 핀은 밀어도 제자리 */
+.v.pin .face{background:#f5f8fb}
+.v .pinx{position:absolute;right:24px;top:0;bottom:0;display:flex;align-items:center;color:var(--sub);pointer-events:none;z-index:1}
+#pinGo{position:absolute;left:0;right:0;bottom:0;height:calc(var(--safe-b) + max(4px,calc(20px - var(--safe-b))));z-index:2}
 #vMark{position:absolute;right:-14px;top:50%;width:0;height:0;transform:translateY(-50%);
   border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:7px solid #c9d3dd;pointer-events:none}
 /* 가운데 표시(삼각형) 앞 단어 번호 — 꾹 누르면 숫자가 지워지고 흐린 파란 커서만 */
@@ -165,9 +169,9 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><span class="plus" aria-hidden="true">+</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.9.6</div>
+      <div id="ver">v0.9.7</div>
     </div>
-  </div></section>
+  </div><div id="pinGo" aria-label="핀 위치로"></div></section>
 
   <!-- ② 점멸 화면 -->
   <section class="screen" id="flash">
@@ -341,6 +345,7 @@ $("#vUndo").onclick=()=>{const d=VDEL.pop();if(!d)return;ac();SFX.tok();
   if(d.edit){const k=VOC().indexOf(d.obj);if(k>=0&&d.obj[d.field]===d.now){const nv={...d.obj,[d.field]:d.orig};
       if(!VOC().some((v,i)=>i!==k&&same(v,nv)))d.obj[d.field]=d.orig;}
     save();renderVocab();if(k>=0)scrollToWord(k,true);return;}                                      // 수정 되돌리기 = 고치기 전으로
+  if(d.v.pin&&VOC().some(v=>v.pin))delete d.v.pin;
   if(!VOC().some(v=>same(v,d.v))){VOC().splice(Math.min(d.k,VOC().length),0,d.v);if(d.k<=DB.pos)DB.pos++;}
   save();renderVocab();scrollToWord(Math.min(d.k,VOC().length-1),true);};
 
@@ -357,11 +362,19 @@ list.addEventListener("click",e=>{const b=e.target.closest(".tg");if(!b)return;a
 function applySel(){list.classList.toggle("selon",!!DB.sel);}
 /* 로고 줄 오른쪽 빈 곳을 톡 → 단어장 맨 위(첫 단어)로 */
 $("#titlebar").addEventListener("click",e=>{if(e.target.closest("#logo")||EDITING)return;list.scrollTo({top:0,behavior:"smooth"});});
+const PIN='<span class="pinx" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5-1.5l1.5-4l4-4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg></span>';
+/* 핀 박기: 하나만, 새로 박으면 옮겨감 (소리 없음) */
+function setPin(el){const w=VOC()[+el.dataset.i];if(!w)return;VOC().forEach(v=>{if(v.pin)delete v.pin;});w.pin=true;save();
+  $$("#vList .v.pin").forEach(r=>{r.classList.remove("pin");const x=r.querySelector(".pinx");if(x)x.remove();});
+  el.classList.add("pin");el.insertAdjacentHTML("beforeend",PIN);}
+/* 글자 위를 눌렀는지 (아니면 빈 곳 = 핀) */
+function onText(span,x,y){if(!span||getComputedStyle(span).visibility==="hidden")return false;const r=document.createRange();r.selectNodeContents(span);
+  return [...r.getClientRects()].some(b=>x>=b.left-3&&x<=b.right+3&&y>=b.top-3&&y<=b.bottom+3);}
 function renderVocab(){$("#vUndo").disabled=!VDEL.length;const q=$("#vSearch").value.trim().toLowerCase();
   const rows=VOC().map((v,i)=>({v,i})).filter(({v})=>!q||v.en.toLowerCase().includes(q)||v.ko.includes(q));applyV();
   if(!VOC().length){list.innerHTML='<div class="vempty">가져오기로 단어 파일(CSV)을<br>불러와 주세요</div>';lastC=null;return;}
   if(!rows.length){list.innerHTML='<div class="vempty">찾는 단어가 없어요</div>';lastC=null;return;}
-  list.innerHTML='<div class="pad"></div>'+TGS()+'<div id="vAdd">'+ADDROW()+'</div>'+rows.map(({v,i})=>`<div class="v${v.sel?" sel":""}" data-i="${i}"><div class="under del">삭제</div><span class="star" aria-hidden="true">★</span><div class="face"><span class="ko">${esc(v.ko)}</span><span class="en">${esc(v.en)}</span></div></div>`).join("")+'<div class="pad"></div>';
+  list.innerHTML='<div class="pad"></div>'+TGS()+'<div id="vAdd">'+ADDROW()+'</div>'+rows.map(({v,i})=>`<div class="v${v.sel?" sel":""}${v.pin?" pin":""}" data-i="${i}"><div class="under del">삭제</div><span class="star" aria-hidden="true">★</span><div class="face"><span class="ko">${esc(v.ko)}</span><span class="en">${esc(v.en)}</span></div>${v.pin?PIN:""}</div>`).join("")+'<div class="pad"></div>';
   applySel();pads();$$("#vList .v").forEach(bindRow);lastC=centerIndex();showNum();}
 function pads(){const r=$$("#vList .v"),p=$$("#vList .pad");if(!r.length||p.length<2)return;const h=list.clientHeight,t=$("#vList .tgs"),a=$("#vAdd");
   const g=getComputedStyle(r[0].querySelector(".face")).gridTemplateColumns.split(" ")[0];list.style.setProperty("--bw",g);
@@ -397,8 +410,8 @@ function showNum(){const el=$("#vNum");if(el.querySelector("input"))return;const
 function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector(".del");let g=null,lpT=null,lp=null;
   el.addEventListener("pointerdown",e=>{if(EDITING||e.button>0)return;userScroll=true;el.classList.add("peek");
     g={x0:e.clientX,y0:e.clientY,dx:0,axis:null,t:performance.now()};const tgt=e.target.closest(".en,.ko"),px=e.clientX,py=e.clientY;lp=null;clearTimeout(lpT);
-    lpT=setTimeout(()=>{if(!g||g.axis||!tgt)return;lp={tgt,px,py};ac();SFX.tok();},500);});
-  el.addEventListener("pointermove",e=>{if(!g)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;
+    lpT=setTimeout(()=>{if(!g||g.axis)return;if(onText(tgt,px,py)){lp={tgt,px,py};ac();SFX.tok();}else{g.pinned=true;setPin(el);}},500);});
+  el.addEventListener("pointermove",e=>{if(!g||g.pinned)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;
     if(!g.axis&&Math.hypot(dx,dy)>10){g.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";clearTimeout(lpT);if(g.axis==="y")el.classList.remove("peek");if(g.axis==="x")try{el.setPointerCapture(e.pointerId)}catch(_){}}
     if(g.axis!=="x")return;g.dx=dx;
     if(dx>0){face.style.transition="none";face.style.willChange="transform";
@@ -406,7 +419,7 @@ function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector("
       else{const base=DB.sel&&el.classList.contains("sel")?22:0;face.style.transform=`translateX(${base+Math.min(56,dx*.55)}px)`;}}   // 그 외: 선택
     else{face.style.transform="";del.style.opacity=0;if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translate3d(${Math.min(0,dx+10)}px,0,0)`;}});   // 왼쪽 = 점멸 화면
   const up=e=>{clearTimeout(lpT);setTimeout(()=>{face.style.willChange=""},260);if(lp&&e.type==="pointerup"){const L=lp;lp=null;g=null;startEdit(el,L.tgt,L.px,L.py);return;}lp=null;
-    if(EDITING)return;el.classList.remove("peek");if(!g)return;const G=g;g=null;
+    if(EDITING)return;el.classList.remove("peek");if(!g)return;const G=g;g=null;if(G.pinned)return;
     const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
     if(G.axis==="x"&&G.dx<0){face.style.transform="";if(flick(G.dx,G.t,-1)){goFlash();return;}fReady=false;return;}
     face.style.transition="";
@@ -516,6 +529,10 @@ function finishAdd(){if(!ADD)return;ADD=false;const box=$("#vAdd");$(".search").
   document.addEventListener("pointerdown",e=>{if(!ADD||e.target.closest(".va,.search"))return;e.preventDefault();e.stopPropagation();
     const a=document.activeElement;if(a&&a.blur)a.blur();finishAdd();
     const eat=ev=>{ev.preventDefault();ev.stopPropagation();};document.addEventListener("click",eat,{capture:true,once:true});setTimeout(()=>document.removeEventListener("click",eat,true),400);},true);})();
+/* 검색창 아래 터치 → 핀 박은 라인을 가운데로 (이동만) */
+$("#pinGo").addEventListener("click",e=>{e.stopPropagation();if(EDITING||ADD)return;const k=VOC().findIndex(v=>v.pin);if(k<0)return;
+  if($("#vSearch").value){$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();}
+  const r=$(`#vList .v[data-i="${k}"]`);if(r)list.scrollTo({top:r.offsetTop+r.offsetHeight/2-list.clientHeight/2,behavior:"smooth"});});
 $("#vClear").onclick=()=>{$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();};
 
 /* ── 시작: 단어장 화면 ── */
