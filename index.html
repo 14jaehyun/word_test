@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.6.1 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.7 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -109,6 +109,17 @@ svg{display:block}
 .search input{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;color:var(--v-ink)}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
 #vClear{flex:none;width:28px;height:28px;margin-right:-6px;display:flex;align-items:center;justify-content:center}
+/* 토글 모음: 목록 안 첫 단어 바로 위(스크롤하면 같이 올라감) — 세로 타원 + 아래 작은 글씨 */
+.tgs{display:flex;gap:12px;align-items:flex-end;padding:0 0 10px}
+.tg{display:flex;flex-direction:column;align-items:center;gap:5px}
+.tg small{font-size:10px;color:var(--sub);letter-spacing:.02em;line-height:1}
+.vt{position:relative;width:22px;height:38px;border-radius:11px;background:var(--soft);border:1px solid var(--line)}
+.vt.three{height:50px}
+.vt i{position:absolute;left:2px;width:16px;height:16px;border-radius:50%;background:#c3ccd6;transition:top .18s cubic-bezier(.3,.7,.3,1),background .18s}
+.vt[data-v="0"] i{top:calc(100% - 18px)}
+.vt[data-v="1"] i{top:2px;background:var(--navy)}
+.vt.three[data-v="1"] i{top:calc(50% - 8px)}
+.vt.three[data-v="2"] i{top:2px;background:var(--navy)}
 /* 버전: 검색창 아래 하단 여백(홈 막대 위)에 — 목록·검색창 위치에 영향 없음 */
 #ver{position:absolute;left:0;right:0;bottom:max(2px,calc(var(--safe-b) - 16px));line-height:12px;text-align:center;font-size:10.5px;color:var(--faint);letter-spacing:.04em;font-variant-numeric:tabular-nums;pointer-events:none}
 #toast{position:fixed;left:50%;top:calc(var(--safe-t) + 14px);transform:translateX(-50%);background:rgba(31,42,55,.88);color:#fff;font-size:13px;
@@ -130,7 +141,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vMark"></div></div>
       <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.6.1</div>
+      <div id="ver">v0.7</div>
     </div>
   </div></section>
 
@@ -138,7 +149,7 @@ svg{display:block}
   <section class="screen" id="flash">
     <div id="stage"><div id="word"><span id="w-en" class="on"></span><span id="w-ko"></span></div></div>
     <div id="meter"><div id="tick"></div><div id="hz"></div></div>
-    <button id="mode" aria-label="표시 순서"><i></i></button>
+    <button id="mode" aria-label="자동넘김"><i></i></button>
   </section>
 </div>
 <div id="toast"></div>
@@ -169,9 +180,15 @@ function noise(dur,vol,f0){const a=ac();if(!a)return;const n=Math.max(1,Math.flo
   for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type="highpass";f.frequency.value=f0;
   const g=a.createGain(),t=a.currentTime+.005;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+dur*.25);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
   s.connect(f).connect(g).connect(a.destination);s.start(t);s.stop(t+dur+.02);}
+function beep(f,dur){const a=ac();if(!a)return;const t=a.currentTime+.005,o=a.createOscillator(),g=a.createGain(),lp=a.createBiquadFilter(),v=.06;
+  o.type="square";o.frequency.value=f;lp.type="lowpass";lp.frequency.value=7000;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.003);g.gain.setValueAtTime(v,t+dur-.01);g.gain.linearRampToValueAtTime(0,t+dur);
+  o.connect(lp).connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.02);}
 const SFX={
   tick(){noise(.006,.5*1.29,5000);tone(3200,"sine",.18*1.29,.012);},                 // 틱 — 드럼·속도계 걸림
-  tok(){tone(2093,"triangle",.7*.38,.16);tone(4186,"sine",.15*.38,.08);},             // 톡 — 버튼·꾹 누르기
+  tok(){tone(2093,"triangle",.7*.38,.16);tone(4186,"sine",.15*.38,.08);},
+  ti(){beep(4096,.045);},                                                            // 띠 — 점멸
+  tiLong(){beep(4096,.32);},                                                         // 띠~ — 단어 시작             // 톡 — 버튼·꾹 누르기
 };
 /* 로고 뿅 — 고쉐와 같은 녹음 파일(sfx/logo.wav), '톡'과 같은 크기 */
 let LOGO_BUF=null,LOGO_BUSY=false;
@@ -194,13 +211,15 @@ const wordEl=$("#word"),stage=$("#stage");
 function pickColor(){let c;do{c=Math.floor(Math.random()*COLORS.length)}while(c===lastColor&&COLORS.length>1);lastColor=c;return COLORS[c];}
 function curWord(){const v=VOC();if(!v.length)return{en:"",ko:""};DB.pos=((DB.pos%v.length)+v.length)%v.length;return v[DB.pos];}
 function buildSet(){const{en,ko}=curWord();$("#w-en").textContent=en;$("#w-ko").textContent=ko;fitWords();wordEl.style.color=pickColor();
-  steps=[];for(let i=0;i<6;i++){const isKo=DB.grouped?i>=3:i%2===1,l=isKo?"ko":"en";steps.push({on:true,l},{on:false,l});}
+  const n=3+(DB.cnt||0);steps=[];for(let i=0;i<2*n;i++){const isKo=DB.grouped?i>=n:i%2===1,l=isKo?"ko":"en";steps.push({on:true,l,first:i===0},{on:false,l});}
   steps.push({gap:true});stepIdx=0;}
 function show(s){const en=$("#w-en"),ko=$("#w-ko");if(s.gap){en.classList.remove("on");ko.classList.remove("on");return;}
   en.classList.toggle("on",s.on&&s.l==="en");ko.classList.toggle("on",s.on&&s.l==="ko");}
-function step(){if(!playing)return;if(stepIdx>=steps.length){DB.pos++;save();buildSet();}const s=steps[stepIdx++];show(s);
+let goOn=false;   // 자동넘김 꺼짐: 한 단어 끝나면 멈추고, 화면을 터치해야 다음 단어
+function step(){if(!playing)return;if(stepIdx>=steps.length){if(DB.auto===false&&!goOn){playing=false;return;}goOn=false;DB.pos++;save();buildSet();}
+  const s=steps[stepIdx++];show(s);if(s.on&&DB.snd)(s.first?SFX.tiLong:SFX.ti)();
   timer=setTimeout(step,s.gap?350:1000/DB.hz/2);}                                        // 켜짐·꺼짐 시간 같게
-function setPlaying(p){playing=p;clearTimeout(timer);if(p)step();}                      // 멈추면 그 화면 그대로
+function setPlaying(p){playing=p;clearTimeout(timer);if(p){goOn=stepIdx>=steps.length;step();}}   // 끝에서 멈춰 있을 때 터치 = 다음 단어                      // 멈추면 그 화면 그대로
 // 항상 한 줄: 화면 폭보다 길면 그 단어만 글자를 줄임
 function fitWords(){const cs=getComputedStyle(stage),maxW=stage.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
   const base=parseFloat(getComputedStyle(wordEl).fontSize);
@@ -216,10 +235,10 @@ function stepHz(dir){const i=LEVELS.indexOf(DB.hz),j=Math.max(0,Math.min(LEVELS.
   if(j===i)return false;DB.hz=LEVELS[j];save();SFX.tick();drawMeter(true);return true;}
 
 /* 하단 토글: 순서 (꺼짐 영한영한영한 / 켜짐 영영영한한한) */
-const modeBtn=$("#mode");modeBtn.classList.toggle("on",DB.grouped);
+if(DB.auto===undefined)DB.auto=true;
+const modeBtn=$("#mode");modeBtn.classList.toggle("on",DB.auto);
 modeBtn.addEventListener("pointerdown",e=>e.stopPropagation());
-modeBtn.addEventListener("click",e=>{e.stopPropagation();ac();SFX.tok();DB.grouped=!DB.grouped;modeBtn.classList.toggle("on",DB.grouped);save();
-  const k=stepIdx;buildSet();stepIdx=Math.min(k,steps.length-1);});
+modeBtn.addEventListener("click",e=>{e.stopPropagation();ac();SFX.tok();DB.auto=!DB.auto;modeBtn.classList.toggle("on",DB.auto);save();});
 
 /* 점멸 화면 손동작: 위아래 = 속도(단계마다 살짝 걸림), 오른쪽 밀기 = 단어장, 터치 = 일시정지/점멸 */
 const STEP_PX=34,DETENT_MS=110;
@@ -265,14 +284,20 @@ $$("#vToggle button").forEach(b=>b.onclick=()=>{ac();SFX.tok();DB.vmode=b.datase
 $("#vUndo").onclick=()=>{const d=VDEL.pop();if(!d)return;ac();SFX.tok();if(!VOC().some(v=>same(v,d.v))){VOC().splice(Math.min(d.k,VOC().length),0,d.v);if(d.k<=DB.pos)DB.pos++;}
   save();renderVocab();scrollToWord(Math.min(d.k,VOC().length-1),true);};
 
+/* 토글 모음 (반복 / 횟수 3·4·5 / 소리) */
+const TGS=()=>`<div class="tgs"><button class="tg" data-k="grouped" aria-label="반복"><span class="vt" data-v="${DB.grouped?1:0}"><i></i></span><small>반복</small></button>`+
+  `<button class="tg" data-k="cnt" aria-label="횟수"><span class="vt three" data-v="${DB.cnt||0}"><i></i></span><small>횟수</small></button>`+
+  `<button class="tg" data-k="snd" aria-label="소리"><span class="vt" data-v="${DB.snd?1:0}"><i></i></span><small>소리</small></button></div>`;
+list.addEventListener("click",e=>{const b=e.target.closest(".tg");if(!b)return;ac();SFX.tok();const k=b.dataset.k,t=b.querySelector(".vt");
+  if(k==="cnt"){DB.cnt=((DB.cnt||0)+1)%3;t.dataset.v=DB.cnt;}else{DB[k]=!DB[k];t.dataset.v=DB[k]?1:0;}save();fReady=false;});
 function renderVocab(){$("#vUndo").disabled=!VDEL.length;const q=$("#vSearch").value.trim().toLowerCase();
   const rows=VOC().map((v,i)=>({v,i})).filter(({v})=>!q||v.en.toLowerCase().includes(q)||v.ko.includes(q));applyV();
   if(!VOC().length){list.innerHTML='<div class="vempty">가져오기로 단어 파일(CSV)을<br>불러와 주세요</div>';lastC=null;return;}
   if(!rows.length){list.innerHTML='<div class="vempty">찾는 단어가 없어요</div>';lastC=null;return;}
-  list.innerHTML='<div class="pad"></div>'+rows.map(({v,i})=>`<div class="v" data-i="${i}"><div class="under del">삭제</div><div class="face"><span class="ko">${esc(v.ko)}</span><span class="en">${esc(v.en)}</span></div></div>`).join("")+'<div class="pad"></div>';
+  list.innerHTML='<div class="pad"></div>'+TGS()+rows.map(({v,i})=>`<div class="v" data-i="${i}"><div class="under del">삭제</div><div class="face"><span class="ko">${esc(v.ko)}</span><span class="en">${esc(v.en)}</span></div></div>`).join("")+'<div class="pad"></div>';
   pads();$$("#vList .v").forEach(bindRow);lastC=centerIndex();}
-function pads(){const r=$$("#vList .v"),p=$$("#vList .pad");if(!r.length||p.length<2)return;const h=list.clientHeight;
-  p[0].style.height=Math.max(0,h/2-r[0].offsetHeight/2)+"px";p[1].style.height=Math.max(0,h/2-r[r.length-1].offsetHeight/2)+"px";}
+function pads(){const r=$$("#vList .v"),p=$$("#vList .pad");if(!r.length||p.length<2)return;const h=list.clientHeight,t=$("#vList .tgs");
+  p[0].style.height=Math.max(0,h/2-r[0].offsetHeight/2-(t?t.offsetHeight:0))+"px";p[1].style.height=Math.max(0,h/2-r[r.length-1].offsetHeight/2)+"px";}
 addEventListener("resize",()=>{pads();});
 function centerRow(){const mid=list.scrollTop+list.clientHeight/2;let best=null,bd=1e9;
   $$("#vList .v").forEach(r=>{const d=Math.abs(r.offsetTop+r.offsetHeight/2-mid);if(d<bd){bd=d;best=r}});return best;}
