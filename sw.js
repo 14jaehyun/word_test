@@ -1,5 +1,5 @@
-// 빡빡빡 단어장 v0.1 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
-const CACHE = "bbak-v0.1";
+// Words Injector v0.2 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
+const CACHE = "wi-v0.2";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
