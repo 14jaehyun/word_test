@@ -1,0 +1,29 @@
+// 빡빡빡 단어장 v0.1 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
+const CACHE = "bbak-v0.1";
+const CORE = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
+
+self.addEventListener("install", e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", e => {
+  e.waitUntil(caches.keys()
+    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
+});
+self.addEventListener("fetch", e => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  // 앱 화면은 새 버전 우선, 안 되면 캐시
+  if (req.mode === "navigate") {
+    e.respondWith(fetch(req).then(r => { caches.open(CACHE).then(c => c.put("index.html", r.clone())); return r; })
+      .catch(() => caches.match("index.html")));
+    return;
+  }
+  // 글꼴·아이콘 등은 캐시 우선
+  if (url.origin === location.origin || url.host.endsWith("fonts.googleapis.com") || url.host.endsWith("fonts.gstatic.com")) {
+    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => {
+      const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r;
+    })));
+  }
+});

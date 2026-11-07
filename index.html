@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>빡빡빡 단어장</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="빡빡빡">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
+<style>
+/* Layout: full-screen stage for the flashing word, a slim control bar pinned below */
+:root {
+  --ink: #0b0b0d;
+  --paper: #f5f5f7;
+  --dim: rgba(245,245,247,.55);
+  --line: rgba(245,245,247,.16);
+  --magenta: #ff2bd6;
+  --neon: #39ff14;
+  --yellow: #ffe600;
+  --blue: #2a7bff;
+  --warn: #ff5a3c;
+  --f-en: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-ko: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-ui: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
+* { -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--ink); color: var(--paper); font-family: var(--f-ui);
+  display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  overscroll-behavior: none;
+}
+button { -webkit-user-select: none; user-select: none; }
+#stage {
+  flex: 1; min-height: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--ink); cursor: pointer; user-select: none; touch-action: none;
+}
+#hzbadge {
+  position: absolute; top: 50%; right: max(16px, env(safe-area-inset-right, 0px));
+  transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font: 600 13px var(--f-ui); color: var(--paper); font-variant-numeric: tabular-nums;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+#hzbadge.show { opacity: 1; transition: none; }
+#hzbadge b { font-size: 22px; }
+#hzbadge.risk { color: var(--warn); }
+/* 영어·한국어를 같은 칸에 겹쳐 두고 보이는 쪽만 바꾼다: 상자 크기가 변하지 않아 흔들림 없음 */
+#word {
+  display: grid; place-items: center; max-width: 100%;
+  font-size: clamp(44px, 13vw, 150px); text-align: center;
+}
+#word > span {
+  grid-area: 1 / 1; line-height: 1.1; white-space: nowrap;
+  /* 글꼴마다 다른 위아래 여백을 잘라 글자 몸통 기준으로 중앙 정렬 */
+  text-box: trim-both cap alphabetic;
+  visibility: hidden;
+}
+#w-en { font-family: var(--f-en); letter-spacing: -.01em; }
+#w-ko { font-family: var(--f-ko); }
+#word > span.on { visibility: visible; }
+#meta {
+  position: absolute; top: 14px; left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; justify-content: space-between; font-size: 12px;
+  letter-spacing: .08em; font-variant-numeric: tabular-nums; opacity: .7;
+}
+#paused {
+  position: absolute; bottom: 18px; left: 0; right: 0; text-align: center;
+  font-size: 13px; color: var(--dim);
+}
+#bar {
+  border-top: 1px solid var(--line); background: var(--ink);
+  padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: center;
+}
+.group { display: flex; align-items: center; gap: 10px; }
+.label { font-size: 11px; letter-spacing: .1em; color: var(--dim); }
+
+/* lying-down oval toggle */
+.pill {
+  position: relative; width: 196px; height: 42px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: rgba(245,245,247,.06);
+  display: grid; grid-template-columns: 1fr 1fr; padding: 0; cursor: pointer;
+  font: 600 12px var(--f-ui); color: var(--paper); font-variant-numeric: tabular-nums;
+}
+.pill::before {
+  content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px;
+  width: calc(50% - 3px); border-radius: 999px; background: var(--paper);
+  transition: transform .2s ease;
+}
+.pill[aria-checked="true"]::before { transform: translateX(100%); }
+.pill span { position: relative; z-index: 1; display: grid; place-items: center; transition: color .2s; }
+.pill[aria-checked="false"] span:first-child,
+.pill[aria-checked="true"] span:last-child { color: var(--ink); }
+
+.seg { display: flex; border: 1.5px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button {
+  border: 0; background: transparent; color: var(--paper); border-radius: 999px;
+  padding: 8px 12px; font: 600 12px var(--f-ui); cursor: pointer; white-space: nowrap;
+}
+.seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+.seg button.risk[aria-pressed="true"] { background: var(--warn); color: var(--ink); }
+
+.btn {
+  border: 1.5px solid var(--line); background: transparent; color: var(--paper);
+  border-radius: 999px; padding: 9px 16px; font: 600 12px var(--f-ui); cursor: pointer;
+}
+.btn:hover, .seg button:hover, .pill:hover { border-color: var(--dim); }
+:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+#csv { display: none; }
+#note { width: 100%; text-align: center; font-size: 12px; color: var(--dim); min-height: 1em; }
+#note.warn { color: var(--warn); }
+</style>
+</head>
+<body>
+<div id="stage" title="탭해서 일시정지/재생">
+  <div id="meta"><span id="count">1 / 12</span><span id="lang">EN</span></div>
+  <div id="word"><span id="w-en" class="on">serendipity</span><span id="w-ko">뜻밖의 행운</span></div>
+  <div id="paused" hidden>일시정지됨 · 화면을 탭하면 재생</div>
+  <div id="hzbadge"><span>▲</span><b id="hzval">2.5</b><span>회/초</span><span>▼</span></div>
+</div>
+
+<div id="bar">
+  <div class="group">
+    <span class="label">순서</span>
+    <button id="mode" class="pill" role="switch" aria-checked="false" aria-label="표시 순서">
+      <span>영한영한영한</span><span>영영영한한한</span>
+    </button>
+  </div>
+  <div class="group">
+    <button class="btn" id="play">일시정지</button>
+    <button class="btn" id="load">CSV 불러오기</button>
+    <input type="file" id="csv" accept=".csv,text/csv,text/plain">
+  </div>
+  <div id="note">위로 밀면 빠르게, 아래로 밀면 느리게 · 탭하면 일시정지</div>
+</div>
+
+<script>
+const COLORS = ["--magenta", "--neon", "--yellow", "--blue"].map(v =>
+  getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const INK = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+
+let words = [
+  ["serendipity", "뜻밖의 행운"], ["meticulous", "꼼꼼한"], ["ubiquitous", "어디에나 있는"],
+  ["candid", "솔직한"], ["resilient", "회복력 있는"], ["ambiguous", "애매한"],
+  ["deteriorate", "악화되다"], ["leverage", "지렛대로 활용하다"], ["impairment", "손상"],
+  ["accrue", "발생하다, 누적되다"], ["scrutiny", "면밀한 조사"], ["contingent", "~에 달린, 우발적인"]
+];
+
+const $ = id => document.getElementById(id);
+const stage = $("stage"), wordEl = $("word"), note = $("note");
+let order = [], pos = 0, lastColor = -1;
+let grouped = false, hz = 2.5, playing = true, timer = null;
+let steps = [], stepIdx = 0, setColor = COLORS[0];
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function newOrder() { order = shuffle(words.map((_, i) => i)); pos = 0; }
+
+function pickColor() {
+  let c; do { c = Math.floor(Math.random() * COLORS.length); } while (c === lastColor);
+  lastColor = c; return COLORS[c];
+}
+
+function buildSet() {
+  if (pos >= order.length) newOrder();
+  const [en, ko] = words[order[pos]];
+  setColor = pickColor();
+  $("w-en").textContent = en; $("w-ko").textContent = ko;
+  fitWords();
+  wordEl.style.color = setColor;
+  steps = [];
+  for (let i = 0; i < 6; i++) {
+    const isKo = grouped ? i >= 3 : i % 2 === 1;
+    const w = isKo ? ko : en, l = isKo ? "ko" : "en";
+    steps.push({ on: true, w, l }, { on: false, w, l });
+  }
+  steps.push({ gap: true });
+  stepIdx = 0;
+  $("count").textContent = `${pos + 1} / ${order.length}`;
+}
+
+// 항상 한 줄: 화면 폭보다 길면 그 단어만 글자 크기를 줄임
+function fitWords() {
+  const cs = getComputedStyle(stage);
+  const maxW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const base = parseFloat(getComputedStyle(wordEl).fontSize);
+  for (const id of ["w-en", "w-ko"]) {
+    const el = $(id);
+    el.style.fontSize = "";
+    const w = el.getBoundingClientRect().width;
+    if (w > maxW) el.style.fontSize = Math.floor(base * maxW / w * 0.98) + "px";
+  }
+}
+window.addEventListener("resize", fitWords);
+document.fonts?.ready.then(fitWords);
+
+function render(s) {
+  const en = $("w-en"), ko = $("w-ko");
+  if (s.gap) { en.classList.remove("on"); ko.classList.remove("on"); return; }
+  $("lang").textContent = s.l === "en" ? "EN" : "KO";
+  en.classList.toggle("on", s.on && s.l === "en");
+  ko.classList.toggle("on", s.on && s.l === "ko");
+}
+
+function tick() {
+  if (!playing) return;
+  if (stepIdx >= steps.length) { pos++; buildSet(); }
+  const s = steps[stepIdx++];
+  render(s);
+  const half = 1000 / hz / 2;
+  timer = setTimeout(tick, s.gap ? 350 : half);
+}
+
+function setPlaying(p) {
+  playing = p; clearTimeout(timer);
+  $("play").textContent = p ? "일시정지" : "재생";
+  $("paused").hidden = p;
+  if (p) tick();
+}
+
+$("mode").addEventListener("click", e => {
+  grouped = !grouped;
+  e.currentTarget.setAttribute("aria-checked", String(grouped));
+});
+
+const LEVELS = [1, 1.5, 2, 2.5, 3, 4, 5, 6];
+let badgeTimer = null;
+
+function setHz(v, flash) {
+  hz = v;
+  if (flash) {
+    const b = $("hzbadge");
+    $("hzval").textContent = hz;
+    b.classList.toggle("risk", hz > 3);
+    b.classList.add("show");
+    clearTimeout(badgeTimer);
+    badgeTimer = setTimeout(() => b.classList.remove("show"), 700);
+  }
+}
+// 초당 3회를 넘기 직전: 샑 소리 + 잠깐 멈춤. 멈춘 뒤 계속 올리면 통과.
+let audioCtx = null, gateUntil = 0, gateArmed = false;
+function ensureAudio() {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume?.(); } catch (_) {}
+}
+function beep() {
+  if (!audioCtx) return;
+  try {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime;
+    o.type = "square"; o.frequency.value = 1400;
+    g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.16);
+  } catch (_) {}
+}
+function stepHz(dir) {
+  if (dir > 0 && hz === 3) {
+    const now = performance.now();
+    if (!gateArmed) { gateArmed = true; gateUntil = now + 700; beep(); setHz(3, true); $("hzbadge").classList.add("risk"); return; }
+    if (now < gateUntil) return;
+  }
+  let i = LEVELS.indexOf(hz);
+  if (i < 0) i = LEVELS.findIndex(l => l > hz) - (dir > 0 ? 1 : 0);
+  i = Math.max(0, Math.min(LEVELS.length - 1, i + dir));
+  setHz(LEVELS[i], true);
+  if (hz < 3 || (hz === 3 && dir < 0)) gateArmed = false;
+}
+
+
+$("play").addEventListener("click", () => setPlaying(!playing));
+
+// 위로 밀면 빠르게, 아래로 밀면 느리게. 40px마다 한 단계. 거의 안 움직이면 탭(일시정지).
+let dragY = null, startY = 0, moved = false;
+stage.addEventListener("pointerdown", e => { ensureAudio(); dragY = startY = e.clientY; moved = false; stage.setPointerCapture(e.pointerId); });
+stage.addEventListener("pointermove", e => {
+  if (dragY === null) return;
+  const d = dragY - e.clientY;
+  if (Math.abs(startY - e.clientY) > 10) moved = true;
+  if (Math.abs(d) >= 40) { stepHz(d > 0 ? 1 : -1); dragY = e.clientY; }
+});
+stage.addEventListener("pointerup", () => { if (dragY !== null && !moved) setPlaying(!playing); dragY = null; });
+stage.addEventListener("pointercancel", () => { dragY = null; });
+let wheelAcc = 0;
+stage.addEventListener("wheel", e => {
+  e.preventDefault(); ensureAudio();
+  wheelAcc += e.deltaY;
+  if (Math.abs(wheelAcc) >= 60) { stepHz(wheelAcc < 0 ? 1 : -1); wheelAcc = 0; }
+}, { passive: false });
+document.addEventListener("keydown", e => {
+  if (e.code === "ArrowUp") { e.preventDefault(); ensureAudio(); stepHz(1); }
+  if (e.code === "ArrowDown") { e.preventDefault(); stepHz(-1); }
+});
+document.addEventListener("keydown", e => { if (e.code === "Space" && e.target === document.body) { e.preventDefault(); setPlaying(!playing); } });
+
+$("load").addEventListener("click", () => $("csv").click());
+$("csv").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const rows = parseCSV(String(r.result).replace(/^﻿/, ""))
+      .filter(r => r.length >= 2 && r[0].trim() && r[1].trim())
+      .map(r => [r[0].trim(), r[1].trim()]);
+    if (rows.length && /^(english|en|영어|word)$/i.test(rows[0][0])) rows.shift();
+    if (!rows.length) { note.textContent = "불러온 단어가 없어요. 한 줄에 영어,한국어 형식인지 확인해 주세요."; note.className = "warn"; return; }
+    words = rows; try { localStorage.setItem("bbak-words", JSON.stringify(rows)); } catch (_) {}
+    newOrder(); buildSet();
+    note.textContent = `${f.name}에서 ${rows.length}개 불러옴`; note.className = "";
+    setPlaying(true);
+  };
+  r.readAsText(f, "utf-8");
+  e.target.value = "";
+});
+
+function parseCSV(t) {
+  const out = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"' && t[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === "," || c === "\t") { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && t[i + 1] === "\n") i++; row.push(cur); out.push(row); row = []; cur = ""; }
+    else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); out.push(row); }
+  return out;
+}
+
+async function wake() { try { await navigator.wakeLock?.request("screen"); } catch (_) {} }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") wake(); });
+wake();
+
+try { const saved = JSON.parse(localStorage.getItem("bbak-words") || "null"); if (Array.isArray(saved) && saved.length) words = saved; } catch (_) {}
+note.textContent = `${words.length}개 단어 · 위로 밀면 빠르게, 아래로 밀면 느리게 · 탭하면 일시정지`;
+newOrder(); buildSet(); tick();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
