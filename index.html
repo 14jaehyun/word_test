@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.8">
+<link rel="manifest" href="manifest.webmanifest?v=0.9">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.8 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.9 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -47,7 +47,7 @@ svg{display:block}
   padding:var(--safe-t) max(16px,env(safe-area-inset-right,0px)) var(--safe-b) max(16px,env(safe-area-inset-left,0px))}
 /* 영어·한국어를 같은 칸에 겹쳐 두고 보이는 쪽만 바꿈 — 상자 크기가 변하지 않아 흔들림 없음 */
 #word{display:grid;place-items:center;max-width:100%;font-size:clamp(44px,13vw,150px);text-align:center}
-#word>span{grid-area:1/1;line-height:1.1;white-space:nowrap;text-box:trim-both cap alphabetic;visibility:hidden}
+#word>span{grid-area:1/1;line-height:1.12;white-space:nowrap;text-box:trim-both cap alphabetic;visibility:hidden}
 #w-en{font-family:var(--f-en);letter-spacing:-.01em}
 #w-ko{font-family:var(--f-ko)}
 #word>span.on{visibility:visible}
@@ -62,7 +62,7 @@ svg{display:block}
 #mode{position:absolute;left:50%;bottom:calc(var(--safe-b) + 34px);transform:translateX(-50%);width:52px;height:30px;border-radius:15px;
   background:rgba(245,245,247,.12)}
 #mode i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:rgba(245,245,247,.35);transition:left .2s,background .2s}
-#mode.on i{left:25px;background:var(--paper)}
+#mode.on i{left:25px}
 
 /* ── 단어장 화면 (고쉐 단어장 그대로) ── */
 #vocab{touch-action:pan-y;background:var(--bg);color:var(--v-ink);display:flex;flex-direction:column;padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
@@ -75,8 +75,8 @@ svg{display:block}
 #logo.on .lB{opacity:1;letter-spacing:-.01em;transform:none}
 /* u 위 점 하나 = 같은 글꼴의 i 점만 잘라 u 가운데 위에 얹음 */
 #logo .ud{position:relative;display:inline-block}
-#logo .ud::after{content:"i";position:absolute;left:50%;top:0;transform:translateX(-50%);clip-path:inset(0 0 64% 0);pointer-events:none}
-#logo .n{color:var(--navy)}
+#logo .ud .dt{position:absolute;left:50%;top:0;transform:translateX(-50%);clip-path:inset(0 0 64% 0);pointer-events:none}
+#logo .n{color:#c97fb9}
 #pVocab{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 20px}
 .vhead{flex:none;display:flex;align-items:center;gap:10px;padding:2px 0 10px}
 .toggle{position:relative;display:flex;background:var(--soft);border-radius:16px;padding:2px}
@@ -123,9 +123,9 @@ svg{display:block}
 .vt.three{height:50px}
 .vt i{position:absolute;left:2px;width:16px;height:16px;border-radius:50%;background:#c3ccd6;transition:top .18s cubic-bezier(.3,.7,.3,1),background .18s}
 .vt[data-v="0"] i{top:calc(100% - 18px)}
-.vt[data-v="1"] i{top:2px;background:var(--navy)}
+.vt[data-v="1"] i{top:2px}
 .vt.three[data-v="1"] i{top:calc(50% - 8px)}
-.vt.three[data-v="2"] i{top:2px;background:var(--navy)}
+.vt.three[data-v="2"] i{top:2px}
 /* 버전: 검색창 아래 하단 여백(홈 막대 위)에 — 목록·검색창 위치에 영향 없음 */
 #ver{position:absolute;left:0;right:0;bottom:max(2px,calc(var(--safe-b) - 16px));line-height:12px;text-align:center;font-size:10.5px;color:var(--faint);letter-spacing:.04em;font-variant-numeric:tabular-nums;pointer-events:none}
 #toast{position:fixed;left:50%;top:calc(var(--safe-t) + 14px);transform:translateX(-50%);background:rgba(31,42,55,.88);color:#fff;font-size:13px;
@@ -137,7 +137,7 @@ svg{display:block}
 <div id="rail">
   <!-- ① 단어장 화면 (처음 화면) -->
   <section class="screen" id="vocab"><div class="in">
-    <div id="titlebar"><div id="logo"><span class="lA"><span class="n">Dan</span>j<span class="ud">u</span>.</span><span class="lB"><span class="n">단어</span> 주사기.</span></div></div>
+    <div id="titlebar"><div id="logo"><span class="lA"><span class="n">Dan</span>j<span class="ud">u<span class="dt" aria-hidden="true">i</span></span>.</span><span class="lB"><span class="n">단어</span> 주사기.</span></div></div>
     <div id="pVocab">
       <div class="vhead">
         <button class="vio" id="vExport" aria-label="단어장 내보내기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button><button class="vio" id="vImport" aria-label="단어장 가져오기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
@@ -147,7 +147,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.8</div>
+      <div id="ver">v0.9</div>
     </div>
   </div></section>
 
@@ -227,10 +227,34 @@ function step(){if(!playing)return;if(stepIdx>=steps.length){if(DB.auto===false&
   timer=setTimeout(step,s.gap?350:1000/DB.hz/2);}                                        // 켜짐·꺼짐 시간 같게
 function setPlaying(p){playing=p;clearTimeout(timer);if(p){goOn=stepIdx>=steps.length;step();}}   // 끝에서 멈춰 있을 때 터치 = 다음 단어                      // 멈추면 그 화면 그대로
 // 항상 한 줄: 화면 폭보다 길면 그 단어만 글자를 줄임
+/* 영어는 항상 한 줄. 한국어는 두 줄까지 — 쉼표·괄호 같은 구분 위치에서만 끊어 뜻이 잘리지 않게.
+   구분 위치가 없거나 두 줄로도 넘치면 그 단어만 글자를 줄임 */
+const MC=document.createElement("canvas").getContext("2d");
+function koChunks(t){const out=[];let cur="";for(let i=0;i<t.length;i++){const c=t[i];
+    if((c==="("||c==="[")&&cur.trim()){out.push(cur.trimEnd());cur="";}
+    cur+=c;if(/[,，、;·\/)\]]/.test(c)&&i<t.length-1){out.push(cur.trimEnd());cur="";}}
+  if(cur.trim())out.push(cur.trim());return out.map(x=>x.trim()).filter(Boolean);}
+function setKo(el,ko,maxW,base){el.style.fontSize="";el.textContent=ko;
+  MC.font=getComputedStyle(el).font;const W=x=>MC.measureText(x).width,one=W(ko);
+  if(one<=maxW)return;
+  const ch=koChunks(ko);
+  if(ch.length<2){el.style.fontSize=Math.floor(base*maxW/one*.98)+"px";return;}
+  let best=null;for(let k=1;k<ch.length;k++){const a=ch.slice(0,k).join(" "),b=ch.slice(k).join(" "),m=Math.max(W(a),W(b));if(!best||m<best.m)best={a,b,m};}
+  el.textContent="";el.append(best.a,document.createElement("br"),best.b);
+  if(best.m>maxW)el.style.fontSize=Math.floor(base*maxW/best.m*.98)+"px";}
 function fitWords(){const cs=getComputedStyle(stage),maxW=stage.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
   const base=parseFloat(getComputedStyle(wordEl).fontSize);
-  for(const id of["#w-en","#w-ko"]){const el=$(id);el.style.fontSize="";const w=el.getBoundingClientRect().width;if(w>maxW)el.style.fontSize=Math.floor(base*maxW/w*.98)+"px";}}
-addEventListener("resize",fitWords);document.fonts&&document.fonts.ready.then(fitWords);
+  const en=$("#w-en");en.style.fontSize="";const w=en.getBoundingClientRect().width;if(w>maxW)en.style.fontSize=Math.floor(base*maxW/w*.98)+"px";
+  setKo($("#w-ko"),curWord().ko,maxW,base);}
+addEventListener("resize",fitWords);document.fonts&&document.fonts.ready.then(()=>{fitWords();fixDot();});
+/* u 위 점: 같은 글꼴에서 점 없는 ı의 줄기 꼭대기를 재고, 그 바로 위에서 i를 잘라 점만 남김 */
+function fixDot(){const d=$("#logo .dt");if(!d)return;const cs=getComputedStyle(d);MC.font=cs.font;
+  const stem=MC.measureText("ı").actualBoundingBoxAscent,m=MC.measureText("i"),lh=parseFloat(cs.lineHeight)||d.offsetHeight;
+  if(!(m.actualBoundingBoxAscent>stem+1))return;
+  const asc=m.fontBoundingBoxAscent,desc=m.fontBoundingBoxDescent;if(!(asc>0))return;
+  const base=(lh-(asc+desc))/2+asc,keep=base-stem-.5;
+  d.style.clipPath=`inset(0 0 ${Math.max(0,lh-keep)}px 0)`;}
+fixDot();
 
 /* 속도계 */
 let meterT=null;
