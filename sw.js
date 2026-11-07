@@ -1,9 +1,9 @@
-// Danju̇ v0.4 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
-const CACHE = "danju-v0.4";
+// Danju̇ v0.5 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
+const CACHE = "danju-v0.5";
 const CORE = ["./", "index.html", "manifest.webmanifest", "danju2-180.png", "danju2-192.png", "danju2-512.png", "sfx/logo.wav"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys()
@@ -20,8 +20,14 @@ self.addEventListener("fetch", e => {
       .catch(() => caches.match("index.html")));
     return;
   }
-  // 글꼴·아이콘 등은 캐시 우선
-  if (url.origin === location.origin || url.host.endsWith("fonts.googleapis.com") || url.host.endsWith("fonts.gstatic.com")) {
+  // 앱 파일(이름·아이콘·설정 포함)은 새 버전 우선, 안 되면 캐시
+  if (url.origin === location.origin) {
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; })
+      .catch(() => caches.match(req, { ignoreSearch: true })));
+    return;
+  }
+  // 글꼴은 캐시 우선
+  if (url.host.endsWith("fonts.googleapis.com") || url.host.endsWith("fonts.gstatic.com")) {
     e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => {
       const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r;
     })));

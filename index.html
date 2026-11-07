@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest?v=0.5">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.4 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.5 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -26,7 +26,8 @@
   --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--ink);overflow:hidden;overscroll-behavior:none}
+html,body{height:100%;background:var(--bg);overflow:hidden;overscroll-behavior:none}
+html.onflash,html.onflash body{background:var(--ink)}
 body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}
 button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
@@ -34,8 +35,8 @@ input{font-family:inherit;-webkit-user-select:text;user-select:text}
 svg{display:block}
 .hidden{display:none!important}
 
-#rail{position:fixed;inset:0;display:flex;width:200%;transition:transform .38s cubic-bezier(.22,.8,.24,1);will-change:transform;backface-visibility:hidden}
-#rail.vocab{transform:translateX(-50%)}
+#rail{position:fixed;top:0;left:0;height:100vh;height:100lvh;display:flex;width:200%;transition:transform .38s cubic-bezier(.22,.8,.24,1);will-change:transform;backface-visibility:hidden}
+#rail.flash{transform:translateX(-50%)}
 #rail.drag{transition:none}
 .screen{position:relative;width:50%;height:100%;overflow:hidden}
 
@@ -71,6 +72,9 @@ svg{display:block}
 #logo .lB{opacity:0;letter-spacing:-.12em;transform:scaleX(.7)}
 #logo.on .lA{opacity:0;letter-spacing:.15em}
 #logo.on .lB{opacity:1;letter-spacing:-.01em;transform:none}
+/* u 위 점 하나 = 같은 글꼴의 i 점만 잘라 u 가운데 위에 얹음 */
+#logo .ud{position:relative;display:inline-block}
+#logo .ud::after{content:"i";position:absolute;left:50%;top:0;transform:translateX(-50%);clip-path:inset(0 0 64% 0);pointer-events:none}
 #logo .n{color:var(--navy)}
 #pVocab{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 20px}
 .vhead{flex:none;display:flex;align-items:center;gap:10px;padding:2px 0 10px}
@@ -92,7 +96,7 @@ svg{display:block}
 .v .en{font-size:14.5px;font-weight:600;line-height:1.35;word-break:break-word}
 .v .ko{font-size:13px;color:var(--sub);line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
 .v .under{position:absolute;inset:0;display:flex;align-items:center;padding:0 16px;opacity:0;font-size:12px}
-.under.del{background:var(--soft);color:var(--sub);justify-content:flex-end}
+.under.del{background:var(--soft);color:var(--sub);justify-content:flex-start}
 #vList.m-en .v .ko{visibility:hidden}
 #vList.m-ko .v .en{visibility:hidden}
 #vList .v.peek .en,#vList .v.peek .ko{visibility:visible}
@@ -105,6 +109,7 @@ svg{display:block}
 .search input{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;color:var(--v-ink)}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
 #vClear{flex:none;width:28px;height:28px;margin-right:-6px;display:flex;align-items:center;justify-content:center}
+#ver{flex:none;text-align:center;font-size:10.5px;color:var(--faint);letter-spacing:.04em;padding:0 0 6px;font-variant-numeric:tabular-nums}
 #toast{position:fixed;left:50%;top:calc(var(--safe-t) + 14px);transform:translateX(-50%);background:rgba(31,42,55,.88);color:#fff;font-size:13px;
   padding:8px 14px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:10}
 #toast.on{opacity:1}
@@ -112,16 +117,9 @@ svg{display:block}
 </head>
 <body>
 <div id="rail">
-  <!-- ① 점멸 화면 -->
-  <section class="screen" id="flash">
-    <div id="stage"><div id="word"><span id="w-en" class="on"></span><span id="w-ko"></span></div></div>
-    <div id="meter"><div id="tick"></div><div id="hz"></div></div>
-    <button id="mode" aria-label="표시 순서"><i></i></button>
-  </section>
-
-  <!-- ② 단어장 화면 -->
+  <!-- ① 단어장 화면 (처음 화면) -->
   <section class="screen" id="vocab"><div class="in">
-    <div id="titlebar"><div id="logo"><span class="lA"><span class="n">Dan</span>ju̇.</span><span class="lB"><span class="n">단어</span> 주사기.</span></div></div>
+    <div id="titlebar"><div id="logo"><span class="lA"><span class="n">Dan</span>j<span class="ud">u</span>.</span><span class="lB"><span class="n">단어</span> 주사기.</span></div></div>
     <div id="pVocab">
       <div class="vhead">
         <button class="vio" id="vImport" aria-label="단어장 가져오기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
@@ -131,8 +129,16 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vMark"></div></div>
       <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
+      <div id="ver">v0.5</div>
     </div>
   </div></section>
+
+  <!-- ② 점멸 화면 -->
+  <section class="screen" id="flash">
+    <div id="stage"><div id="word"><span id="w-en" class="on"></span><span id="w-ko"></span></div></div>
+    <div id="meter"><div id="tick"></div><div id="hz"></div></div>
+    <button id="mode" aria-label="표시 순서"><i></i></button>
+  </section>
 </div>
 <div id="toast"></div>
 
@@ -214,7 +220,7 @@ modeBtn.addEventListener("pointerdown",e=>e.stopPropagation());
 modeBtn.addEventListener("click",e=>{e.stopPropagation();ac();SFX.tok();DB.grouped=!DB.grouped;modeBtn.classList.toggle("on",DB.grouped);save();
   const k=stepIdx;buildSet();stepIdx=Math.min(k,steps.length-1);});
 
-/* 점멸 화면 손동작: 위아래 = 속도(단계마다 살짝 걸림), 왼쪽 밀기 = 단어장, 터치 = 일시정지/점멸 */
+/* 점멸 화면 손동작: 위아래 = 속도(단계마다 살짝 걸림), 오른쪽 밀기 = 단어장, 터치 = 일시정지/점멸 */
 const STEP_PX=34,DETENT_MS=110;
 (()=>{const el=$("#flash");let g=null;
   el.addEventListener("pointerdown",e=>{if(e.button>0)return;ac();g={x0:e.clientX,y0:e.clientY,ly:e.clientY,axis:null,acc:0,lock:0,t:performance.now()};try{el.setPointerCapture(e.pointerId)}catch(_){}});
@@ -223,15 +229,15 @@ const STEP_PX=34,DETENT_MS=110;
     if(g.axis==="y"){const now=performance.now(),d=g.ly-e.clientY;g.ly=e.clientY;
       if(now<g.lock)return;                                   // 방금 한 칸 넘어감 → 잠깐 걸림
       g.acc+=d;if(Math.abs(g.acc)>=STEP_PX){const ok=stepHz(g.acc>0?1:-1);g.acc=0;if(ok)g.lock=now+DETENT_MS;}}
-    else if(g.axis==="x"){$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(${Math.min(0,dx)}px)`;}});
+    else if(g.axis==="x"){$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(calc(-50% + ${Math.max(0,dx)}px))`;}});
   const end=e=>{if(!g)return;const G=g;g=null;const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
     if(!G.axis&&e.type==="pointerup"){setPlaying(!playing);return;}
-    if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,-1))goVocab();};
+    if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,1))goVocab();};
   el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
   el.addEventListener("wheel",e=>{e.preventDefault();stepHz(e.deltaY<0?1:-1);},{passive:false});})();
-document.addEventListener("keydown",e=>{if($("#rail").classList.contains("vocab"))return;
+document.addEventListener("keydown",e=>{if(!$("#rail").classList.contains("flash"))return;
   if(e.code==="ArrowUp"){e.preventDefault();stepHz(1)}if(e.code==="ArrowDown"){e.preventDefault();stepHz(-1)}
-  if(e.code==="Space"){e.preventDefault();setPlaying(!playing)}if(e.code==="ArrowLeft")goVocab();});
+  if(e.code==="Space"){e.preventDefault();setPlaying(!playing)}if(e.code==="ArrowRight")goVocab();});
 
 /* ══════════ 화면 전환 ══════════ */
 /* 무거운 준비(목록 그리기·단어 맞추기)는 끌기 시작할 때 미리 해 두고, 넘어가는 동안엔 움직임만 */
@@ -240,8 +246,8 @@ function flick(dx,t0,dir){const v=dx/Math.max(1,performance.now()-t0);return dx*
 function prepVocab(){if(vReady)return;vReady=true;$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();scrollToWord(DB.pos,false);}
 function prepFlash(){if(fReady)return;fReady=true;const ci=centerIndex();if(ci!==null)DB.pos=ci;save();
   setPlaying(false);buildSet();show(steps[0]);stepIdx=1;}
-function goVocab(){setPlaying(false);prepVocab();$("#rail").classList.add("vocab");fReady=false;}
-function goFlash(){if(EDITING)return;$("#vSearch").blur();prepFlash();$("#rail").classList.remove("vocab");vReady=false;}   // 가운데 단어로, 정지 상태(터치하면 점멸)
+function goVocab(){setPlaying(false);prepVocab();$("#rail").classList.remove("flash");document.documentElement.classList.remove("onflash");fReady=false;}
+function goFlash(){if(EDITING)return;$("#vSearch").blur();prepFlash();$("#rail").classList.add("flash");document.documentElement.classList.add("onflash");vReady=false;}   // 가운데 단어로, 정지 상태(터치하면 점멸)
 
 /* ══════════ 단어장 (고쉐 단어장 + 드럼 + 꾹 눌러 고치기) ══════════ */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -283,26 +289,26 @@ function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector("
   el.addEventListener("pointermove",e=>{if(!g)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;
     if(!g.axis&&Math.hypot(dx,dy)>10){g.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";clearTimeout(lpT);if(g.axis==="y")el.classList.remove("peek");if(g.axis==="x")try{el.setPointerCapture(e.pointerId)}catch(_){}}
     if(g.axis!=="x")return;g.dx=dx;
-    if(dx<0){face.style.transition="";face.style.transform=`translateX(${dx}px)`;del.style.opacity=1;}        // 왼쪽 = 삭제
-    else{face.style.transform="";del.style.opacity=0;if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(calc(-50% + ${dx}px))`;}});   // 오른쪽 = 점멸 화면
+    if(dx>0){face.style.transition="";face.style.transform=`translateX(${dx}px)`;del.style.opacity=1;}        // 오른쪽 = 삭제
+    else{face.style.transform="";del.style.opacity=0;if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(${dx}px)`;}});   // 왼쪽 = 점멸 화면
   const up=e=>{clearTimeout(lpT);if(lp&&e.type==="pointerup"){const L=lp;lp=null;g=null;startEdit(el,L.tgt,L.px,L.py);return;}lp=null;
     if(EDITING)return;el.classList.remove("peek");if(!g)return;const G=g;g=null;
     const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
-    if(G.axis==="x"&&G.dx>0){face.style.transform="";if(flick(G.dx,G.t,1)){goFlash();return;}fReady=false;return;}
+    if(G.axis==="x"&&G.dx<0){face.style.transform="";if(flick(G.dx,G.t,-1)){goFlash();return;}fReady=false;return;}
     face.style.transition="transform .2s";
-    if(G.axis==="x"&&G.dx<-el.clientWidth*.3){ac();SFX.tok();face.style.transform="translateX(-100%)";
+    if(G.axis==="x"&&G.dx>el.clientWidth*.3){ac();SFX.tok();face.style.transform="translateX(100%)";
       setTimeout(()=>{const k=+el.dataset.i;if(VOC()[k]){VDEL.push({v:VOC()[k],k});if(VDEL.length>5)VDEL.shift();VOC().splice(k,1);if(k<DB.pos)DB.pos--;}
         save();const keep=list.scrollTop;renderVocab();list.scrollTop=keep;},200);}
     else{face.style.transform="";setTimeout(()=>del.style.opacity=0,200);}};
   ["pointerup","pointercancel"].forEach(t=>el.addEventListener(t,up));}
 
-/* 단어장 빈 곳(머리·검색줄)에서 오른쪽으로 밀어도 점멸 화면으로 */
+/* 단어장 빈 곳(머리·검색줄)에서 왼쪽으로 밀어도 점멸 화면으로 */
 (()=>{const el=$("#vocab");let g=null;
   el.addEventListener("pointerdown",e=>{if(EDITING||e.target.closest(".v,input,button,#logo"))return;g={x0:e.clientX,y0:e.clientY,axis:null,t:performance.now()};});
   el.addEventListener("pointermove",e=>{if(!g)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;if(!g.axis&&Math.hypot(dx,dy)>10)g.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";
-    if(g.axis==="x"&&dx>0){if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(calc(-50% + ${dx}px))`;}});
+    if(g.axis==="x"&&dx<0){if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(${dx}px)`;}});
   const end=e=>{if(!g)return;const G=g;g=null;$("#rail").classList.remove("drag");$("#rail").style.transform="";
-    if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,1))goFlash();else fReady=false;};
+    if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,-1))goFlash();else fReady=false;};
   el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);})();
 
 /* 꾹 누르면 누른 자리에 커서 (앞뒤 선택 없음) — 손을 뗄 때 키보드가 뜸 */
@@ -344,11 +350,11 @@ $("#vSearch").addEventListener("input",()=>{renderVocab();$("#vClear").classList
 $("#vSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.target.blur();}});
 $("#vClear").onclick=()=>{$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();};
 
-/* ── 시작: 점멸 화면, 정지 상태 (터치하면 점멸) ── */
+/* ── 시작: 단어장 화면 ── */
 async function wake(){try{await navigator.wakeLock?.request("screen")}catch(_){}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")wake();else setPlaying(false);});
 wake();
-buildSet();show(steps[0]);stepIdx=1;drawMeter(false);movePill();
+buildSet();show(steps[0]);stepIdx=1;drawMeter(false);prepVocab();requestAnimationFrame(()=>{movePill();pads();scrollToWord(DB.pos,false);});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
