@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.9.7">
+<link rel="manifest" href="manifest.webmanifest?v=0.9.8">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.9.7 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.9.8 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -169,7 +169,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><span class="plus" aria-hidden="true">+</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.9.7</div>
+      <div id="ver">v0.9.8</div>
     </div>
   </div><div id="pinGo" aria-label="핀 위치로"></div></section>
 
@@ -363,10 +363,10 @@ function applySel(){list.classList.toggle("selon",!!DB.sel);}
 /* 로고 줄 오른쪽 빈 곳을 톡 → 단어장 맨 위(첫 단어)로 */
 $("#titlebar").addEventListener("click",e=>{if(e.target.closest("#logo")||EDITING)return;list.scrollTo({top:0,behavior:"smooth"});});
 const PIN='<span class="pinx" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5-1.5l1.5-4l4-4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg></span>';
-/* 핀 박기: 하나만, 새로 박으면 옮겨감 (소리 없음) */
-function setPin(el){const w=VOC()[+el.dataset.i];if(!w)return;VOC().forEach(v=>{if(v.pin)delete v.pin;});w.pin=true;save();
+/* 핀 박기: 하나만, 새로 박으면 옮겨감, 핀 라인을 다시 꾹 = 취소 */
+function setPin(el){const w=VOC()[+el.dataset.i];if(!w)return;ac();SFX.tuk();const was=!!w.pin;VOC().forEach(v=>{if(v.pin)delete v.pin;});
   $$("#vList .v.pin").forEach(r=>{r.classList.remove("pin");const x=r.querySelector(".pinx");if(x)x.remove();});
-  el.classList.add("pin");el.insertAdjacentHTML("beforeend",PIN);}
+  if(!was){w.pin=true;el.classList.add("pin");el.insertAdjacentHTML("beforeend",PIN);}save();}   // 핀을 다시 꾹 = 취소 (박기·취소 모두 툭)
 /* 글자 위를 눌렀는지 (아니면 빈 곳 = 핀) */
 function onText(span,x,y){if(!span||getComputedStyle(span).visibility==="hidden")return false;const r=document.createRange();r.selectNodeContents(span);
   return [...r.getClientRects()].some(b=>x>=b.left-3&&x<=b.right+3&&y>=b.top-3&&y<=b.bottom+3);}
