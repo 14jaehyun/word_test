@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.5">
+<link rel="manifest" href="manifest.webmanifest?v=0.6">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.5 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.6 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -35,7 +35,7 @@ input{font-family:inherit;-webkit-user-select:text;user-select:text}
 svg{display:block}
 .hidden{display:none!important}
 
-#rail{position:fixed;top:0;left:0;height:100vh;height:100lvh;display:flex;width:200%;transition:transform .38s cubic-bezier(.22,.8,.24,1);will-change:transform;backface-visibility:hidden}
+#rail{position:fixed;top:0;left:0;height:100vh;height:100dvh;display:flex;width:200%;transition:transform .38s cubic-bezier(.22,.8,.24,1);will-change:transform;backface-visibility:hidden}
 #rail.flash{transform:translateX(-50%)}
 #rail.drag{transition:none}
 .screen{position:relative;width:50%;height:100%;overflow:hidden}
@@ -122,14 +122,14 @@ svg{display:block}
     <div id="titlebar"><div id="logo"><span class="lA"><span class="n">Dan</span>j<span class="ud">u</span>.</span><span class="lB"><span class="n">단어</span> 주사기.</span></div></div>
     <div id="pVocab">
       <div class="vhead">
-        <button class="vio" id="vImport" aria-label="단어장 가져오기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+        <button class="vio" id="vExport" aria-label="단어장 내보내기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button><button class="vio" id="vImport" aria-label="단어장 가져오기"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
         <button class="vio" id="vUndo" aria-label="삭제 되돌리기" disabled><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
         <input id="vFile" type="file" accept=".csv,text/csv,text/comma-separated-values,text/plain" hidden>
         <div class="toggle" id="vToggle"><span class="pill"></span><button data-m="ko">한</button><button data-m="en">영</button><button data-m="both">둘 다</button></div>
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vMark"></div></div>
       <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.5</div>
+      <div id="ver">v0.6</div>
     </div>
   </div></section>
 
@@ -338,6 +338,14 @@ function parseCSV(t){const out=[];let row=[],cur="",q=false;t=t.replace(/^﻿/,"
     else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(cur);out.push(row);row=[];cur="";}else cur+=c;}
   if(cur||row.length){row.push(cur);out.push(row);}return out;}
 const HG=/[가-힣]/;
+/* 내보내기: 고쉐와 동일 — 제목 줄 없이 한국어,영어 / 저장된 순서 / 공유 화면 */
+const csvCell=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+$("#vExport").onclick=async()=>{ac();SFX.tok();if(!VOC().length){toast("저장한 단어가 없어요");return;}
+  const d=new Date(),p=n=>String(n).padStart(2,"0"),name=`danju-단어장-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}.csv`;
+  const body="\uFEFF"+VOC().map(v=>csvCell(v.ko)+","+csvCell(v.en)).join("\r\n")+"\r\n";
+  const file=new File([body],name,{type:"text/csv"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);};
 $("#vImport").onclick=()=>{ac();SFX.tok();$("#vFile").click();};
 $("#vFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;let n=0,skip=0;
   for(const r of parseCSV(await f.text())){if(r.length<2)continue;const a=norm(r[0]),b=norm(r[1]);if(!a||!b)continue;

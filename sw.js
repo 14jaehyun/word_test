@@ -1,5 +1,5 @@
-// Danju̇ v0.5 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
-const CACHE = "danju-v0.5";
+// Danju̇ v0.6 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
+const CACHE = "danju-v0.6";
 const CORE = ["./", "index.html", "manifest.webmanifest", "danju2-180.png", "danju2-192.png", "danju2-512.png", "sfx/logo.wav"];
 
 self.addEventListener("install", e => {
@@ -16,7 +16,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   // 앱 화면은 새 버전 우선, 안 되면 캐시
   if (req.mode === "navigate") {
-    e.respondWith(fetch(req).then(r => { caches.open(CACHE).then(c => c.put("index.html", r.clone())); return r; })
+    e.respondWith(fetch(req.url, { cache: "no-cache" }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put("index.html", copy)); return r; })
       .catch(() => caches.match("index.html")));
     return;
   }
