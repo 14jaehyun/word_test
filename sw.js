@@ -1,5 +1,5 @@
-// Danju̇ v0.7 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
-const CACHE = "danju-v0.7";
+// Danju̇ v0.8 — 오프라인에서도 열리게 앱 파일과 글꼴을 캐시
+const CACHE = "danju-v0.8";
 const CORE = ["./", "index.html", "manifest.webmanifest", "danju2-180.png", "danju2-192.png", "danju2-512.png", "sfx/logo.wav"];
 
 self.addEventListener("install", e => {

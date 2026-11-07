@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.6">
+<link rel="manifest" href="manifest.webmanifest?v=0.8">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.7 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.8 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -36,7 +36,8 @@ svg{display:block}
 .hidden{display:none!important}
 
 #rail{position:fixed;top:0;left:0;height:100vh;height:100dvh;display:flex;width:200%;transition:transform .38s cubic-bezier(.22,.8,.24,1);will-change:transform;backface-visibility:hidden}
-#rail.flash{transform:translateX(-50%)}
+#rail{transform:translate3d(0,0,0)}
+#rail.flash{transform:translate3d(-50%,0,0)}
 #rail.drag{transition:none}
 .screen{position:relative;width:50%;height:100%;overflow:hidden}
 
@@ -92,7 +93,7 @@ svg{display:block}
 #vList .pad{scroll-snap-align:none;pointer-events:none}
 .v{position:relative;overflow:hidden;border-bottom:1px solid var(--line);scroll-snap-align:center}
 .v:last-of-type{border-bottom:none}
-.v .face{position:relative;display:grid;grid-template-columns:calc(40% - 12px) 1fr;gap:12px;align-items:baseline;padding:9px 2px;background:#fff;will-change:transform}
+.v .face{position:relative;display:grid;grid-template-columns:calc(40% - 12px) 1fr;gap:12px;align-items:baseline;padding:9px 30px 9px 2px;background:#fff}
 .v .en{font-size:14.5px;font-weight:600;line-height:1.35;word-break:break-word}
 .v .ko{font-size:13px;color:var(--sub);line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
 .v .under{position:absolute;inset:0;display:flex;align-items:center;padding:0 16px;opacity:0;font-size:12px}
@@ -105,6 +106,11 @@ svg{display:block}
 .vempty{font-size:13px;color:var(--faint);text-align:center;padding:40px 0;line-height:1.7}
 #vMark{position:absolute;right:-14px;top:50%;width:0;height:0;transform:translateY(-50%);
   border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:7px solid #c9d3dd;pointer-events:none}
+/* 가운데 표시(삼각형) 앞 단어 번호 — 꾹 누르면 숫자가 지워지고 흐린 파란 커서만 */
+#vNum{position:absolute;right:2px;top:50%;transform:translateY(-50%);min-width:1.6em;text-align:right;font-size:10.5px;color:var(--faint);
+  font-variant-numeric:tabular-nums;line-height:20px;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer}
+#vNum .goin{width:2.6em;border:none;outline:none;background:transparent;font:inherit;font-size:16px;transform:scale(.66);transform-origin:right center;
+  color:var(--v-ink);caret-color:#9cc3e6;text-align:right;padding:0;margin:0;-webkit-user-select:text;user-select:text}
 .search{flex:none;height:44px;margin:8px 0 max(4px,calc(20px - var(--safe-b)));border-radius:12px;background:var(--soft2);border:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--faint);font-size:14px}
 .search input{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;color:var(--v-ink)}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
@@ -139,9 +145,9 @@ svg{display:block}
         <input id="vFile" type="file" accept=".csv,text/csv,text/comma-separated-values,text/plain" hidden>
         <div class="toggle" id="vToggle"><span class="pill"></span><button data-m="ko">한</button><button data-m="en">영</button><button data-m="both">둘 다</button></div>
       </div>
-      <div id="vWrap"><div id="vList"></div><div id="vMark"></div></div>
+      <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.7</div>
+      <div id="ver">v0.8</div>
     </div>
   </div></section>
 
@@ -249,7 +255,7 @@ const STEP_PX=34,DETENT_MS=110;
     if(g.axis==="y"){const now=performance.now(),d=g.ly-e.clientY;g.ly=e.clientY;
       if(now<g.lock)return;                                   // 방금 한 칸 넘어감 → 잠깐 걸림
       g.acc+=d;if(Math.abs(g.acc)>=STEP_PX){const ok=stepHz(g.acc>0?1:-1);g.acc=0;if(ok)g.lock=now+DETENT_MS;}}
-    else if(g.axis==="x"){$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(calc(-50% + ${Math.max(0,dx)}px))`;}});
+    else if(g.axis==="x"){$("#rail").classList.add("drag");$("#rail").style.transform=`translate3d(calc(-50% + ${Math.max(0,dx-10)}px),0,0)`;}});
   const end=e=>{if(!g)return;const G=g;g=null;const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
     if(!G.axis&&e.type==="pointerup"){setPlaying(!playing);return;}
     if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,1))goVocab();};
@@ -263,7 +269,9 @@ document.addEventListener("keydown",e=>{if(!$("#rail").classList.contains("flash
 /* 무거운 준비(목록 그리기·단어 맞추기)는 끌기 시작할 때 미리 해 두고, 넘어가는 동안엔 움직임만 */
 let vReady=false,fReady=false;
 function flick(dx,t0,dir){const v=dx/Math.max(1,performance.now()-t0);return dx*dir>60||(dx*dir>20&&v*dir>.45);}   // 60px 넘거나 빠르게 튕기면 넘어감
-function prepVocab(){if(vReady)return;vReady=true;$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();scrollToWord(DB.pos,false);}
+let vDrawn=false;   // 목록은 한 번 그려 두고, 넘어올 때는 위치만 맞춤 (검색 중이었을 때만 다시 그림)
+function prepVocab(){if(vReady)return;vReady=true;const q=$("#vSearch").value;$("#vSearch").value="";$("#vClear").classList.add("hidden");
+  if(!vDrawn||q){renderVocab();vDrawn=true;}scrollToWord(DB.pos,false);}
 function prepFlash(){if(fReady)return;fReady=true;const ci=centerIndex();if(ci!==null)DB.pos=ci;save();
   setPlaying(false);buildSet();show(steps[0]);stepIdx=1;}
 function goVocab(){setPlaying(false);prepVocab();$("#rail").classList.remove("flash");document.documentElement.classList.remove("onflash");fReady=false;}
@@ -295,7 +303,7 @@ function renderVocab(){$("#vUndo").disabled=!VDEL.length;const q=$("#vSearch").v
   if(!VOC().length){list.innerHTML='<div class="vempty">가져오기로 단어 파일(CSV)을<br>불러와 주세요</div>';lastC=null;return;}
   if(!rows.length){list.innerHTML='<div class="vempty">찾는 단어가 없어요</div>';lastC=null;return;}
   list.innerHTML='<div class="pad"></div>'+TGS()+rows.map(({v,i})=>`<div class="v" data-i="${i}"><div class="under del">삭제</div><div class="face"><span class="ko">${esc(v.ko)}</span><span class="en">${esc(v.en)}</span></div></div>`).join("")+'<div class="pad"></div>';
-  pads();$$("#vList .v").forEach(bindRow);lastC=centerIndex();}
+  pads();$$("#vList .v").forEach(bindRow);lastC=centerIndex();showNum();}
 function pads(){const r=$$("#vList .v"),p=$$("#vList .pad");if(!r.length||p.length<2)return;const h=list.clientHeight,t=$("#vList .tgs");
   p[0].style.height=Math.max(0,h/2-r[0].offsetHeight/2-(t?t.offsetHeight:0))+"px";p[1].style.height=Math.max(0,h/2-r[r.length-1].offsetHeight/2)+"px";}
 addEventListener("resize",()=>{pads();});
@@ -303,10 +311,28 @@ function centerRow(){const mid=list.scrollTop+list.clientHeight/2;let best=null,
   $$("#vList .v").forEach(r=>{const d=Math.abs(r.offsetTop+r.offsetHeight/2-mid);if(d<bd){bd=d;best=r}});return best;}
 function centerIndex(){const r=centerRow();return r?+r.dataset.i:null;}
 function scrollToWord(i,smooth){const r=$(`#vList .v[data-i="${i}"]`);if(!r)return;
-  list.scrollTo({top:r.offsetTop+r.offsetHeight/2-list.clientHeight/2,behavior:smooth?"smooth":"auto"});lastC=i;}
+  list.scrollTo({top:r.offsetTop+r.offsetHeight/2-list.clientHeight/2,behavior:smooth?"smooth":"auto"});lastC=i;const n=$("#vNum");if(n&&!n.querySelector("input"))n.textContent=String(i+1);}
 list.addEventListener("touchstart",()=>{userScroll=true;ac();},{passive:true});
 list.addEventListener("wheel",()=>{userScroll=true;},{passive:true});
-list.addEventListener("scroll",()=>{const c=centerIndex();if(c!==lastC){lastC=c;if(userScroll&&!EDITING)SFX.tick();}});   // 가운데가 바뀔 때마다 틱 → 타라락
+list.addEventListener("scroll",()=>{const c=centerIndex();if(c!==lastC){lastC=c;showNum();if(userScroll&&!EDITING)SFX.tick();}});
+function showNum(){const el=$("#vNum");if(el.querySelector("input"))return;const c=centerIndex();el.textContent=c===null?"":String(c+1);}
+(()=>{const em=$("#vNum");let inp=null,dg=null;
+  const close=go=>{if(!inp)return;const v=inp.value.trim(),el=inp;inp=null;el.remove();
+    if(go&&v&&VOC().length){let n=parseInt(v,10);if(isFinite(n)){n=Math.max(1,Math.min(VOC().length,n));
+      if($("#vSearch").value){$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();}
+      if(n-1!==centerIndex()){SFX.tok();scrollToWord(n-1,false);}}}
+    showNum();};
+  em.addEventListener("pointerdown",e=>{e.stopPropagation();if(inp)return;const d={y:e.clientY,id:e.pointerId,long:false};
+    d.tm=setTimeout(()=>{if(dg===d&&VOC().length){d.long=true;ac();SFX.tok();}},500);dg=d;try{em.setPointerCapture(e.pointerId)}catch(_){}});
+  em.addEventListener("pointermove",e=>{if(!dg||e.pointerId!==dg.id||dg.long)return;if(Math.abs(e.clientY-dg.y)<10)return;clearTimeout(dg.tm);dg=null;});
+  em.addEventListener("pointerup",e=>{e.stopPropagation();const d=dg;dg=null;if(!d)return;clearTimeout(d.tm);if(d.long)open();});   // 키보드는 손을 뗄 때 띄워야 아이폰에서 올라옴
+  em.addEventListener("pointercancel",()=>{if(dg)clearTimeout(dg.tm);dg=null;});
+  em.addEventListener("click",e=>e.stopPropagation());
+  function open(){if(inp)return;em.textContent="";inp=document.createElement("input");
+    Object.assign(inp,{type:"text",inputMode:"numeric",pattern:"[0-9]*",autocomplete:"off",enterKeyHint:"go",value:""});inp.className="goin";em.appendChild(inp);
+    inp.addEventListener("input",()=>{inp.value=inp.value.replace(/\D/g,"").slice(0,5);});
+    inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();inp.blur();}else if(ev.key==="Escape"){inp.value="";inp.blur();}});
+    inp.addEventListener("blur",()=>close(true));inp.focus();}})();   // 빈칸에 커서만, 아무것도 안 넣고 내리면 원래 번호로   // 가운데가 바뀔 때마다 틱 → 타라락
 
 function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector(".del");let g=null,lpT=null,lp=null;
   el.addEventListener("pointerdown",e=>{if(EDITING||e.button>0)return;userScroll=true;el.classList.add("peek");
@@ -315,9 +341,9 @@ function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector("
   el.addEventListener("pointermove",e=>{if(!g)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;
     if(!g.axis&&Math.hypot(dx,dy)>10){g.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";clearTimeout(lpT);if(g.axis==="y")el.classList.remove("peek");if(g.axis==="x")try{el.setPointerCapture(e.pointerId)}catch(_){}}
     if(g.axis!=="x")return;g.dx=dx;
-    if(dx>0){face.style.transition="";face.style.transform=`translateX(${dx}px)`;del.style.opacity=1;}        // 오른쪽 = 삭제
-    else{face.style.transform="";del.style.opacity=0;if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(${dx}px)`;}});   // 왼쪽 = 점멸 화면
-  const up=e=>{clearTimeout(lpT);if(lp&&e.type==="pointerup"){const L=lp;lp=null;g=null;startEdit(el,L.tgt,L.px,L.py);return;}lp=null;
+    if(dx>0){face.style.transition="";face.style.willChange="transform";face.style.transform=`translateX(${dx}px)`;del.style.opacity=1;}        // 오른쪽 = 삭제
+    else{face.style.transform="";del.style.opacity=0;if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translate3d(${Math.min(0,dx+10)}px,0,0)`;}});   // 왼쪽 = 점멸 화면
+  const up=e=>{clearTimeout(lpT);setTimeout(()=>{face.style.willChange=""},260);if(lp&&e.type==="pointerup"){const L=lp;lp=null;g=null;startEdit(el,L.tgt,L.px,L.py);return;}lp=null;
     if(EDITING)return;el.classList.remove("peek");if(!g)return;const G=g;g=null;
     const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
     if(G.axis==="x"&&G.dx<0){face.style.transform="";if(flick(G.dx,G.t,-1)){goFlash();return;}fReady=false;return;}
@@ -332,7 +358,7 @@ function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector("
 (()=>{const el=$("#vocab");let g=null;
   el.addEventListener("pointerdown",e=>{if(EDITING||e.target.closest(".v,input,button,#logo"))return;g={x0:e.clientX,y0:e.clientY,axis:null,t:performance.now()};});
   el.addEventListener("pointermove",e=>{if(!g)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;if(!g.axis&&Math.hypot(dx,dy)>10)g.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";
-    if(g.axis==="x"&&dx<0){if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translateX(${dx}px)`;}});
+    if(g.axis==="x"&&dx<0){if(!fReady)prepFlash();$("#rail").classList.add("drag");$("#rail").style.transform=`translate3d(${Math.min(0,dx+10)}px,0,0)`;}});
   const end=e=>{if(!g)return;const G=g;g=null;$("#rail").classList.remove("drag");$("#rail").style.transform="";
     if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,-1))goFlash();else fReady=false;};
   el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);})();
