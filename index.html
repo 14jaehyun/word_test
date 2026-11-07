@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.9.1 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.9.2 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -147,7 +147,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.9.1</div>
+      <div id="ver">v0.9.2</div>
     </div>
   </div></section>
 
@@ -328,6 +328,8 @@ const TGS=()=>`<div class="tgs"><button class="tg" data-k="grouped" aria-label="
   `<button class="tg" data-k="snd" aria-label="소리"><span class="vt" data-v="${DB.snd?1:0}"><i></i></span><small>소리</small></button></div>`;
 list.addEventListener("click",e=>{const b=e.target.closest(".tg");if(!b)return;ac();SFX.tok();const k=b.dataset.k,t=b.querySelector(".vt");
   if(k==="cnt"){DB.cnt=((DB.cnt||0)+1)%3;t.dataset.v=DB.cnt;}else{DB[k]=!DB[k];t.dataset.v=DB[k]?1:0;}save();fReady=false;});
+/* 로고 줄 오른쪽 빈 곳을 톡 → 단어장 맨 위(첫 단어)로 */
+$("#titlebar").addEventListener("click",e=>{if(e.target.closest("#logo")||EDITING)return;list.scrollTo({top:0,behavior:"smooth"});});
 function renderVocab(){$("#vUndo").disabled=!VDEL.length;const q=$("#vSearch").value.trim().toLowerCase();
   const rows=VOC().map((v,i)=>({v,i})).filter(({v})=>!q||v.en.toLowerCase().includes(q)||v.ko.includes(q));applyV();
   if(!VOC().length){list.innerHTML='<div class="vempty">가져오기로 단어 파일(CSV)을<br>불러와 주세요</div>';lastC=null;return;}
