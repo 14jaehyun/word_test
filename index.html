@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.9.5">
+<link rel="manifest" href="manifest.webmanifest?v=0.9.6">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.9.5 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.9.6 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -165,7 +165,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><span class="plus" aria-hidden="true">+</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.9.5</div>
+      <div id="ver">v0.9.6</div>
     </div>
   </div></section>
 
@@ -211,6 +211,7 @@ function beep(f,dur){const a=ac();if(!a)return;const t=a.currentTime+.005,o=a.cr
 const SFX={
   tick(){noise(.006,.5*1.29,5000);tone(3200,"sine",.18*1.29,.012);},                 // 틱 — 드럼·속도계 걸림
   tok(){tone(2093,"triangle",.7*.38,.16);tone(4186,"sine",.15*.38,.08);},
+  tuk(){tone(392,"triangle",.7*.38,.14);tone(784,"sine",.1*.38,.06);},               // 툭 — 선택 해제 (삑보다 낮게)
   ti(){beep(4096,.045);},                                                            // 띠 — 점멸
   tiLong(){beep(4096,.32);},                                                         // 띠~ — 단어 시작             // 톡 — 버튼·꾹 누르기
 };
@@ -409,8 +410,8 @@ function bindRow(el){const face=el.querySelector(".face"),del=el.querySelector("
     const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
     if(G.axis==="x"&&G.dx<0){face.style.transform="";if(flick(G.dx,G.t,-1)){goFlash();return;}fReady=false;return;}
     face.style.transition="";
-    if(G.axis==="x"&&G.dx>0&&!DB.del){face.style.transform="";if(G.dx>50||flick(G.dx,G.t,1)){ac();SFX.tok();const w=VOC()[+el.dataset.i];
-        if(w){w.sel=!w.sel;if(!w.sel)delete w.sel;el.classList.toggle("sel",!!w.sel);save();fReady=false;}}return;}       // 선택/해제 (둘 다 꺼져 있으면 소리만, 목록엔 반영)
+    if(G.axis==="x"&&G.dx>0&&!DB.del){face.style.transform="";if(G.dx>50||flick(G.dx,G.t,1)){ac();const w=VOC()[+el.dataset.i];
+        if(w){(w.sel?SFX.tuk:SFX.tok)();w.sel=!w.sel;if(!w.sel)delete w.sel;el.classList.toggle("sel",!!w.sel);save();fReady=false;}}return;}       // 선택/해제 (둘 다 꺼져 있으면 소리만, 목록엔 반영)
     face.style.transition="transform .2s";
     if(G.axis==="x"&&DB.del&&G.dx>el.clientWidth*.3){ac();SFX.tok();face.style.transform="translateX(100%)";
       setTimeout(()=>{const k=+el.dataset.i;if(VOC()[k]){VDEL.push({v:VOC()[k],k});if(VDEL.length>7)VDEL.shift();VOC().splice(k,1);if(k<DB.pos)DB.pos--;}
@@ -506,10 +507,11 @@ function finishAdd(){if(!ADD)return;ADD=false;const box=$("#vAdd");$(".search").
     if(VOC().some(v=>same(v,o))||items.some(v=>same(v,o)))return;items.push(o);});
   if(items.length){VOC().unshift(...items);DB.pos+=items.length;save();}
   renderVocab();list.scrollTo({top:0});}
-(()=>{const bar=$(".search");let lt=null,long=false;
-  bar.addEventListener("pointerdown",()=>{long=false;clearTimeout(lt);if(ADD)return;lt=setTimeout(()=>{long=true;ac();SFX.tok();enterAdd();},500);});
-  ["pointerup","pointercancel","pointerleave"].forEach(t=>bar.addEventListener(t,()=>{clearTimeout(lt);if(long&&t==="pointerup"){$("#vSearch").focus();}}));
-  bar.addEventListener("contextmenu",e=>e.preventDefault());
+(()=>{let lt=null,st=null;
+  list.addEventListener("pointerdown",e=>{const sp=e.target.closest("#vAdd");if(ADD||!sp||EDITING)return;st={x:e.clientX,y:e.clientY};clearTimeout(lt);
+    lt=setTimeout(()=>{if(!st)return;st=null;ac();SFX.tok();enterAdd();},500);});
+  list.addEventListener("pointermove",e=>{if(st&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>10){clearTimeout(lt);st=null;}});
+  ["pointerup","pointercancel"].forEach(t=>list.addEventListener(t,()=>{clearTimeout(lt);st=null;}));
   $("#vocab").addEventListener("focusout",()=>setTimeout(()=>{if(ADD&&!(document.activeElement&&document.activeElement.closest(".va,.search")))finishAdd();},60));
   document.addEventListener("pointerdown",e=>{if(!ADD||e.target.closest(".va,.search"))return;e.preventDefault();e.stopPropagation();
     const a=document.activeElement;if(a&&a.blur)a.blur();finishAdd();
