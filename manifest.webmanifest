@@ -1,6 +1,6 @@
 {
-  "name": "Danjü. 단어주사기",
-  "short_name": "Danjü",
+  "name": "Danju̇. 단어 주사기",
+  "short_name": "Danju̇",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,17 +9,17 @@
   "theme_color": "#0b0b0d",
   "icons": [
     {
-      "src": "danju-192.png",
+      "src": "danju2-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "danju-512.png",
+      "src": "danju2-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "danju-512.png",
+      "src": "danju2-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
