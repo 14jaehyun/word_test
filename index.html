@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=0.91.0">
+<link rel="manifest" href="manifest.webmanifest?v=0.91.1">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v0.91.0 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v0.91.1 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -103,6 +103,7 @@ svg{display:block}
 #vList.delon .v .trash{opacity:1}
 #vList.delon .v .face{transform:translateX(22px)}
 #vList.delon .under.del{padding-left:30px}
+#vList.nt .v .face{transition:none!important}
 #vList.m-en .v .ko{visibility:hidden}
 #vList.m-ko .v .en{visibility:hidden}
 #vList .v.peek .en,#vList .v.peek .ko{visibility:visible}
@@ -174,7 +175,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><span class="plus" aria-hidden="true">+</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v0.91.0</div>
+      <div id="ver">v0.91.1</div>
     </div>
   </div><div id="pinGo" aria-label="핀 위치로"></div></section>
 
@@ -363,7 +364,13 @@ const TGS=()=>`<div class="tgs"><button class="tg" data-k="grouped" aria-label="
 list.addEventListener("click",e=>{const b=e.target.closest(".tg");if(!b)return;ac();SFX.tok();const k=b.dataset.k,t=b.querySelector(".vt");
   if(k==="cnt"){DB.cnt=((DB.cnt||0)+1)%3;t.dataset.v=DB.cnt;}else{DB[k]=!DB[k];t.dataset.v=DB[k]?1:0;}
   if((k==="del"||k==="sel")&&DB[k]){const o=k==="del"?"sel":"del";DB[o]=false;const ob=$(`#vList .tg[data-k="${o}"] .vt`);if(ob)ob.dataset.v=0;}   // 삭제·선택은 하나만
-  applySel();save();fReady=false;});
+  if(k==="del"||k==="sel")slideSel();else applySel();save();fReady=false;});
+/* 삭제·선택 켜고 끌 때 보이는 줄을 직접 부드럽게 밀기 (아이폰에서 자동 효과가 안 먹는 경우 대비) */
+function slideSel(){const lr=list.getBoundingClientRect();
+  const fs=$$("#vList .v").filter(r=>{const b=r.getBoundingClientRect();return b.bottom>lr.top&&b.top<lr.bottom;}).map(r=>r.querySelector(".face")).filter(f=>!f.style.transform);
+  list.classList.add("nt");const before=fs.map(f=>getComputedStyle(f).transform);applySel();const after=fs.map(f=>getComputedStyle(f).transform);
+  fs.forEach((f,i)=>{if(before[i]!==after[i])f.animate([{transform:before[i]},{transform:after[i]}],{duration:220,easing:"cubic-bezier(.3,.7,.3,1)"});});
+  requestAnimationFrame(()=>list.classList.remove("nt"));}
 function applySel(){list.classList.toggle("selon",!!DB.sel);list.classList.toggle("delon",!!DB.del);}
 /* 로고 줄 오른쪽 빈 곳을 톡 → 단어장 맨 위(첫 단어)로 */
 /* 위 터치(로고 줄 빈 곳) / 아래 터치(검색창 아래): 가는 길에 핀이 있으면 먼저 핀, 한 번 더 누르면 맨 위·맨 아래 */
