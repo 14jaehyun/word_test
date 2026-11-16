@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=1.0">
+<link rel="manifest" href="manifest.webmanifest?v=1.0.1">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v1.0 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v1.0.1 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -175,7 +175,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><span class="plus" aria-hidden="true">+</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v1.0</div>
+      <div id="ver">v1.0.1</div>
     </div>
   </div><div id="pinGo" aria-label="핀 위치로"></div></section>
 
@@ -317,7 +317,7 @@ const STEP_PX=34,DETENT_MS=110;
     else if(g.axis==="x"){$("#rail").classList.add("drag");$("#rail").style.transform=`translate3d(calc(-50% + ${Math.max(0,dx-10)}px),0,0)`;}});
   const end=e=>{if(!g)return;const G=g;g=null;const rail=$("#rail");rail.classList.remove("drag");rail.style.transform="";
     if(!G.axis&&e.type==="pointerup"){setPlaying(!playing);return;}
-    if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,1))goVocab();};
+    if(G.axis==="x"&&flick(e.clientX-G.x0,G.t,1))goVocab();else vReady=false;};   // 덜 밀고 놓으면 단어장 준비 취소 → 다음에 넘어갈 때 책갈피로 다시 맞춤
   el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
   el.addEventListener("wheel",e=>{e.preventDefault();stepHz(e.deltaY<0?1:-1);},{passive:false});})();
 document.addEventListener("keydown",e=>{if(!$("#rail").classList.contains("flash"))return;
