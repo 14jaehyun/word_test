@@ -9,13 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Danju̇">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="manifest" href="manifest.webmanifest?v=1.0.1">
+<link rel="manifest" href="manifest.webmanifest?v=1.0.2">
 <link rel="apple-touch-icon" href="danju2-180.png">
 <link rel="icon" href="danju2-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Black+Han+Sans&display=swap">
 <style>
-/* Danju̇ v1.0.1 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
+/* Danju̇ v1.0.2 — 점멸 화면(검정) ⇄ 단어장 화면(고쉐 단어장과 같은 흰 화면) */
 :root{
   --ink:#0b0b0d;--paper:#f5f5f7;
   --magenta:#ff2bd6;--neon:#39ff14;--yellow:#ffe600;--blue:#2a7bff;
@@ -175,7 +175,7 @@ svg{display:block}
       </div>
       <div id="vWrap"><div id="vList"></div><div id="vNum"></div><div id="vMark"></div></div>
       <div class="search"><span class="plus" aria-hidden="true">+</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" enterkeyhint="search" placeholder="저장한 단어 검색" autocomplete="off"><button id="vClear" class="hidden" aria-label="검색어 지우기"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#c3ccd6"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
-      <div id="ver">v1.0.1</div>
+      <div id="ver">v1.0.2</div>
     </div>
   </div><div id="pinGo" aria-label="핀 위치로"></div></section>
 
@@ -376,8 +376,10 @@ function slideSel(){const lr=list.getBoundingClientRect();
   requestAnimationFrame(()=>list.classList.remove("nt"));}
 function applySel(){list.classList.toggle("selon",!!DB.sel);list.classList.toggle("delon",!!DB.del);}
 /* 로고 줄 오른쪽 빈 곳을 톡 → 단어장 맨 위(첫 단어)로 */
-/* 위 터치(로고 줄 빈 곳) / 아래 터치(검색창 아래): 가는 길에 핀이 있으면 먼저 핀, 한 번 더 누르면 맨 위·맨 아래 */
-function jump(dir){if(EDITING||ADD)return;const ks=VOC().map((v,i)=>v.pin||v.bm?i:-1).filter(i=>i>=0);   // 핀·책갈피에 한 번씩 걸림 (같은 줄이면 한 번)
+/* 위 터치(로고 줄 빈 곳) / 아래 터치(검색창 아래): 가는 길에 핀이 있으면 먼저 핀, 한 번 더 누르면 맨 위·맨 아래 — v1.0.2: 선택 토글 켜지면 아래만 별표에 걸림 */
+function jump(dir){if(EDITING||ADD)return;
+  const ks=DB.sel?(dir>0?VOC().map((v,i)=>v.sel?i:-1).filter(i=>i>=0):[])   // 선택 토글 켜짐: 아래 터치는 별표 단어에만 걸림, 위 터치는 바로 맨 위 (핀·책갈피 건너뜀)
+    :VOC().map((v,i)=>v.pin||v.bm?i:-1).filter(i=>i>=0);   // 선택 토글 꺼짐: 핀·책갈피에 한 번씩 걸림 (같은 줄이면 한 번)
   if(ks.length&&$("#vSearch").value){$("#vSearch").value="";$("#vClear").classList.add("hidden");renderVocab();}
   const c=centerIndex(),ahead=c===null?[]:ks.filter(i=>dir<0?i<c:i>c);
   if(ahead.length){const k=dir<0?Math.max(...ahead):Math.min(...ahead),r=$(`#vList .v[data-i="${k}"]`);if(r){list.scrollTo({top:r.offsetTop+r.offsetHeight/2-list.clientHeight/2,behavior:"smooth"});return;}}
